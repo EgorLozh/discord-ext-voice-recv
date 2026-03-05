@@ -112,8 +112,26 @@ class PacketRouter(threading.Thread):
                     try:
                         data = decoder.pop_data()
                     except Exception as e:
+                        log.warning("Decoder error for SSRC %s: %s", decoder.ssrc, e)
                         continue
                     if data is not None:
+                        pcm = getattr(data, "pcm", None)
+
+                        if pcm is None:
+                            log.warning("No PCM data from decoder %s", decoder.ssrc)
+                            continue
+
+                        pcm_len = len(pcm)
+
+                        # нормальный размер фрейма
+                        if pcm_len != 3840:
+                            log.warning(
+                                "Unexpected PCM frame size %s from SSRC %s",
+                                pcm_len,
+                                decoder.ssrc
+                            )
+                            continue
+
                         self.sink.write(data.source, data)
 
 
